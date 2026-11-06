@@ -1,0 +1,6 @@
+{
+  "name": "BCNS Radio Niger",
+  "description": "Official live audio streaming application for Broadcasting Corporation of Niger State (Crystal FM 91.3 Minna) with schedule, newsroom, advert rates, and studio requests.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
