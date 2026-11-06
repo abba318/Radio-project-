@@ -16,13 +16,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -39,9 +42,14 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -69,12 +77,11 @@ import com.example.ui.theme.BcnsNightBg
 import com.example.ui.theme.BcnsSuccess
 import com.example.ui.theme.MyApplicationTheme
 
-enum class Screen {
-    HOME,
+enum class MainTab {
+    RADIO,
     SCHEDULE,
     NEWSROOM,
-    ADVERT_RATES,
-    STATION_INFO
+    INFO
 }
 
 class MainActivity : ComponentActivity() {
@@ -97,35 +104,37 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainApp(radioManager: RadioManager) {
-    var currentScreen by remember { mutableStateOf(Screen.HOME) }
+    var currentTab by remember { mutableStateOf(MainTab.RADIO) }
+    var infoSubTabIndex by remember { mutableIntStateOf(0) }
 
     val playbackState by radioManager.state.collectAsStateWithLifecycle()
     val volume by radioManager.volume.collectAsStateWithLifecycle()
+    val statusDetail by radioManager.statusDetail.collectAsStateWithLifecycle()
     val sleepTimerMinutes by radioManager.sleepTimerMinutes.collectAsStateWithLifecycle()
     val visualizerAmplitudes by radioManager.visualizerAmplitudes.collectAsStateWithLifecycle()
     val currentStreamUrl by radioManager.streamUrl.collectAsStateWithLifecycle()
     val errorMessage by radioManager.errorMessage.collectAsStateWithLifecycle()
 
-    BackHandler(enabled = currentScreen != Screen.HOME) {
-        currentScreen = Screen.HOME
+    BackHandler(enabled = currentTab != MainTab.RADIO) {
+        currentTab = MainTab.RADIO
     }
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .background(BcnsNightBg),
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
-            StationHeader(modifier = Modifier.statusBarsPadding())
+            StationHeader()
         },
         bottomBar = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
             ) {
                 // Persistent Mini Player when browsing other screens and audio is active
                 AnimatedVisibility(
-                    visible = (currentScreen != Screen.HOME) && (playbackState == PlaybackState.PLAYING || playbackState == PlaybackState.CONNECTING),
+                    visible = (currentTab != MainTab.RADIO) && (playbackState == PlaybackState.PLAYING || playbackState == PlaybackState.CONNECTING),
                     enter = slideInVertically { it },
                     exit = slideOutVertically { it }
                 ) {
@@ -133,15 +142,15 @@ fun MainApp(radioManager: RadioManager) {
                         playbackState = playbackState,
                         visualizerAmplitudes = visualizerAmplitudes,
                         onTogglePlay = { radioManager.togglePlayPause() },
-                        onBarClick = { currentScreen = Screen.HOME }
+                        onBarClick = { currentTab = MainTab.RADIO }
                     )
                 }
 
-                // Material 3 Navigation Bar (Home, Schedule, Newsroom, Rates, About)
+                // Adaptive Navigation Bar (4 high-contrast tabs)
                 NavigationBar(
                     containerColor = Color(0xFF040E16),
                     contentColor = Color(0xFF90AFC5),
-                    tonalElevation = 8.dp,
+                    tonalElevation = 6.dp,
                     modifier = Modifier.border(
                         1.dp,
                         Color(0x2297B1C7),
@@ -149,46 +158,37 @@ fun MainApp(radioManager: RadioManager) {
                     )
                 ) {
                     NavigationBarItem(
-                        selected = currentScreen == Screen.HOME,
-                        onClick = { currentScreen = Screen.HOME },
+                        selected = currentTab == MainTab.RADIO,
+                        onClick = { currentTab = MainTab.RADIO },
                         icon = { Icon(Icons.Default.Radio, contentDescription = "Radio") },
-                        label = { Text("Radio", fontSize = 10.sp) },
+                        label = { Text("Radio", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
                         colors = navItemColors(),
                         modifier = Modifier.testTag("nav_home")
                     )
 
                     NavigationBarItem(
-                        selected = currentScreen == Screen.SCHEDULE,
-                        onClick = { currentScreen = Screen.SCHEDULE },
+                        selected = currentTab == MainTab.SCHEDULE,
+                        onClick = { currentTab = MainTab.SCHEDULE },
                         icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Schedule") },
-                        label = { Text("Schedule", fontSize = 10.sp) },
+                        label = { Text("Schedule", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
                         colors = navItemColors(),
                         modifier = Modifier.testTag("nav_schedule")
                     )
 
                     NavigationBarItem(
-                        selected = currentScreen == Screen.NEWSROOM,
-                        onClick = { currentScreen = Screen.NEWSROOM },
+                        selected = currentTab == MainTab.NEWSROOM,
+                        onClick = { currentTab = MainTab.NEWSROOM },
                         icon = { Icon(Icons.Default.Newspaper, contentDescription = "Newsroom") },
-                        label = { Text("Newsroom", fontSize = 10.sp) },
+                        label = { Text("News", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
                         colors = navItemColors(),
                         modifier = Modifier.testTag("nav_newsroom")
                     )
 
                     NavigationBarItem(
-                        selected = currentScreen == Screen.ADVERT_RATES,
-                        onClick = { currentScreen = Screen.ADVERT_RATES },
-                        icon = { Icon(Icons.Default.Campaign, contentDescription = "Advert Rates") },
-                        label = { Text("Rates", fontSize = 10.sp) },
-                        colors = navItemColors(),
-                        modifier = Modifier.testTag("nav_rates")
-                    )
-
-                    NavigationBarItem(
-                        selected = currentScreen == Screen.STATION_INFO,
-                        onClick = { currentScreen = Screen.STATION_INFO },
+                        selected = currentTab == MainTab.INFO,
+                        onClick = { currentTab = MainTab.INFO },
                         icon = { Icon(Icons.Default.Info, contentDescription = "Station Info") },
-                        label = { Text("About", fontSize = 10.sp) },
+                        label = { Text("Rates & Info", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
                         colors = navItemColors(),
                         modifier = Modifier.testTag("nav_station_info")
                     )
@@ -202,11 +202,12 @@ fun MainApp(radioManager: RadioManager) {
                 .padding(innerPadding)
                 .background(BcnsNightBg)
         ) {
-            when (currentScreen) {
-                Screen.HOME -> {
+            when (currentTab) {
+                MainTab.RADIO -> {
                     HomeScreen(
                         playbackState = playbackState,
                         volume = volume,
+                        statusDetail = statusDetail,
                         sleepTimerMinutes = sleepTimerMinutes,
                         visualizerAmplitudes = visualizerAmplitudes,
                         currentStreamUrl = currentStreamUrl,
@@ -218,32 +219,84 @@ fun MainApp(radioManager: RadioManager) {
                         onSetSleepTimer = { radioManager.setSleepTimer(it) },
                         onCancelSleepTimer = { radioManager.cancelSleepTimer() },
                         onSwitchStream = { radioManager.switchStream(it) },
-                        onNavigateToSchedule = { currentScreen = Screen.SCHEDULE },
-                        onNavigateToNews = { currentScreen = Screen.NEWSROOM },
-                        onNavigateToRates = { currentScreen = Screen.ADVERT_RATES }
-                    )
-                }
-
-                Screen.SCHEDULE -> {
-                    ScheduleScreen(
-                        playbackState = playbackState,
-                        onListenLiveClick = {
-                            radioManager.play()
-                            currentScreen = Screen.HOME
+                        onNavigateToSchedule = { currentTab = MainTab.SCHEDULE },
+                        onNavigateToNews = { currentTab = MainTab.NEWSROOM },
+                        onNavigateToRates = {
+                            infoSubTabIndex = 0
+                            currentTab = MainTab.INFO
                         }
                     )
                 }
 
-                Screen.NEWSROOM -> {
+                MainTab.SCHEDULE -> {
+                    ScheduleScreen(
+                        playbackState = playbackState,
+                        onListenLiveClick = {
+                            radioManager.play()
+                            currentTab = MainTab.RADIO
+                        }
+                    )
+                }
+
+                MainTab.NEWSROOM -> {
                     NewsroomScreen()
                 }
 
-                Screen.ADVERT_RATES -> {
-                    AdvertRatesScreen()
-                }
+                MainTab.INFO -> {
+                    // Sub-tab switcher between Advert Rates and About Station
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        TabRow(
+                            selectedTabIndex = infoSubTabIndex,
+                            containerColor = Color(0xFF04111B),
+                            contentColor = BcnsCyan,
+                            indicator = { tabPositions ->
+                                TabRowDefaults.SecondaryIndicator(
+                                    Modifier.tabIndicatorOffset(tabPositions[infoSubTabIndex]),
+                                    color = BcnsCyan
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .widthIn(max = 680.dp)
+                        ) {
+                            Tab(
+                                selected = infoSubTabIndex == 0,
+                                onClick = { infoSubTabIndex = 0 },
+                                text = {
+                                    Text(
+                                        "Advert Rate Card",
+                                        fontWeight = if (infoSubTabIndex == 0) FontWeight.Bold else FontWeight.Normal,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            )
+                            Tab(
+                                selected = infoSubTabIndex == 1,
+                                onClick = { infoSubTabIndex = 1 },
+                                text = {
+                                    Text(
+                                        "About & Studio Contacts",
+                                        fontWeight = if (infoSubTabIndex == 1) FontWeight.Bold else FontWeight.Normal,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            )
+                        }
 
-                Screen.STATION_INFO -> {
-                    StationInfoScreen()
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            if (infoSubTabIndex == 0) {
+                                AdvertRatesScreen()
+                            } else {
+                                StationInfoScreen()
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -260,7 +313,7 @@ private fun MiniPlayerBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF091E2E))
+            .background(Color(0xFF0A2234))
             .border(1.dp, Color(0x3397B1C7))
             .clickable { onBarClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp)

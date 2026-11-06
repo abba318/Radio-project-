@@ -1,6 +1,8 @@
 package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,13 +24,13 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.VolumeDown
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -56,6 +58,7 @@ import com.example.ui.theme.BcnsSuccess
 fun LivePlayerCard(
     playbackState: PlaybackState,
     volume: Float,
+    statusDetail: String,
     sleepTimerMinutes: Int?,
     visualizerAmplitudes: List<Float>,
     currentStreamUrl: String,
@@ -74,24 +77,25 @@ fun LivePlayerCard(
 
     val isPlaying = playbackState == PlaybackState.PLAYING
     val isConnecting = playbackState == PlaybackState.CONNECTING
+    val isError = playbackState == PlaybackState.ERROR
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(22.dp))
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF0C2436),
-                        Color(0xFF071824)
+                        Color(0xFF0D283C),
+                        Color(0xFF061622)
                     )
                 )
             )
-            .border(1.dp, Color(0x3397B1C7), RoundedCornerShape(24.dp))
-            .padding(20.dp)
+            .border(1.dp, Color(0x3397B1C7), RoundedCornerShape(22.dp))
+            .padding(18.dp)
     ) {
         Column {
-            // Header Row: Studio Stream, frequency badge & status indicator
+            // Header Row: Studio Live Feed Title, frequency badge & state pill
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -106,7 +110,7 @@ fun LivePlayerCard(
                                 when (playbackState) {
                                     PlaybackState.PLAYING -> BcnsSuccess
                                     PlaybackState.CONNECTING -> BcnsGold
-                                    PlaybackState.ERROR -> Color(0xFFFF5D5D)
+                                    PlaybackState.ERROR -> Color(0xFFFF5252)
                                     else -> Color(0xFF627D92)
                                 }
                             )
@@ -114,62 +118,62 @@ fun LivePlayerCard(
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
-                            text = "Studio Live Feed",
+                            text = "Live Studio Stream",
                             color = Color.White,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Crystal FM 91.3 Minna",
-                            color = Color(0xFF90AFC5),
-                            fontSize = 12.sp
+                            text = "Crystal FM 91.3 Minna Feed",
+                            color = Color(0xFF8FB0C7),
+                            fontSize = 11.sp
                         )
                     }
                 }
 
-                // Frequency Pill Badge
+                // 91.3 FM Frequency Badge
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF0F324C))
-                        .border(1.dp, BcnsCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF0F3550))
+                        .border(1.dp, BcnsGold.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 9.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "91.3 FM",
                         color = BcnsGold,
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Center Player Area: Visualizer & Big Play/Pause Button
+            // Center Player Deck: Visualizer Equalizer + Big Play/Pause Button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0xFF05121B))
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFF04111B))
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = when (playbackState) {
-                            PlaybackState.PLAYING -> "BROADCASTING LIVE"
-                            PlaybackState.CONNECTING -> "Connecting to server..."
-                            PlaybackState.PAUSED -> "Broadcast Paused"
-                            PlaybackState.ERROR -> "Connection Failed"
-                            PlaybackState.IDLE -> "Tap to Listen Live"
+                            PlaybackState.PLAYING -> "ON AIR • STREAMING LIVE"
+                            PlaybackState.CONNECTING -> "CONNECTING TO MINNA..."
+                            PlaybackState.PAUSED -> "STREAM PAUSED"
+                            PlaybackState.ERROR -> "CONNECTION FAILED"
+                            PlaybackState.IDLE -> "READY TO STREAM"
                         },
                         color = when (playbackState) {
                             PlaybackState.PLAYING -> BcnsCyan
                             PlaybackState.CONNECTING -> BcnsGold
                             PlaybackState.ERROR -> Color(0xFFFF7A7A)
-                            else -> Color(0xFF9CB8CD)
+                            else -> Color(0xFF90AFC5)
                         },
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -181,7 +185,7 @@ fun LivePlayerCard(
                     VisualizerBars(
                         amplitudes = visualizerAmplitudes,
                         playbackState = playbackState,
-                        height = 28.dp,
+                        height = 30.dp,
                         barWidth = 5.dp,
                         spacing = 4.dp
                     )
@@ -189,16 +193,20 @@ fun LivePlayerCard(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Play / Pause Action Button
+                // Big Circular Play / Pause Action Button
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(64.dp)
-                        .shadow(12.dp, CircleShape, spotColor = BcnsCyan)
+                        .size(66.dp)
+                        .shadow(10.dp, CircleShape, spotColor = BcnsCyan)
                         .clip(CircleShape)
                         .background(
                             Brush.linearGradient(
-                                listOf(BcnsCyan, Color(0xFF0077B6))
+                                if (isError) {
+                                    listOf(Color(0xFFE53935), Color(0xFFC62828))
+                                } else {
+                                    listOf(BcnsCyan, Color(0xFF0072B2))
+                                }
                             )
                         )
                         .clickable { onTogglePlay() }
@@ -207,25 +215,45 @@ fun LivePlayerCard(
                     if (isConnecting) {
                         CircularProgressIndicator(
                             color = Color.White,
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(30.dp),
                             strokeWidth = 3.dp
+                        )
+                    } else if (isError) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Retry playback",
+                            tint = Color.White,
+                            modifier = Modifier.size(34.dp)
                         )
                     } else {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = if (isPlaying) "Pause broadcast" else "Play live broadcast",
                             tint = Color.White,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(38.dp)
                         )
                     }
                 }
             }
 
+            // Real-time Status Caption
+            Text(
+                text = statusDetail,
+                color = when (playbackState) {
+                    PlaybackState.PLAYING -> Color(0xFFC0DEEE)
+                    PlaybackState.CONNECTING -> BcnsGold
+                    PlaybackState.ERROR -> Color(0xFFFF8585)
+                    else -> Color(0xFF7A9BB3)
+                },
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 8.dp, start = 2.dp)
+            )
+
             AnimatedVisibility(visible = errorMessage != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp)
+                        .padding(top = 8.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color(0x22FF5D5D))
                         .padding(horizontal = 10.dp, vertical = 6.dp),
@@ -246,9 +274,9 @@ fun LivePlayerCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Volume Control Slider (matching website data-volume control)
+            // Volume Control Slider with percentage display
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -280,9 +308,18 @@ fun LivePlayerCard(
                     tint = Color(0xFF7A9BB3),
                     modifier = Modifier.size(18.dp)
                 )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text(
+                    text = "${(volume * 100).toInt()}%",
+                    color = Color(0xFF90AFC5),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Action row: Sleep timer, Switch stream server
             Row(
@@ -296,6 +333,7 @@ fun LivePlayerCard(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFF0A2234))
+                            .border(1.dp, Color(0x2297B1C7), RoundedCornerShape(8.dp))
                             .clickable { showSleepMenu = true }
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -365,6 +403,7 @@ fun LivePlayerCard(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFF0A2234))
+                            .border(1.dp, Color(0x2297B1C7), RoundedCornerShape(8.dp))
                             .clickable { showStreamMenu = true }
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -377,7 +416,7 @@ fun LivePlayerCard(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (currentStreamUrl == primaryStreamUrl) "Primary Server" else "Backup Server",
+                            text = if (currentStreamUrl == primaryStreamUrl) "Primary Feed" else "Backup Feed",
                             color = Color(0xFFC7DCED),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -124,14 +125,20 @@ fun AdvertRatesScreen(
     val unitPrice = if (isPrimeTime) activeRate.primeRate else activeRate.standardRate
     val totalPrice = unitPrice * spotCount
 
-    LazyColumn(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(BcnsNightBg)
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp)
+            .background(BcnsNightBg),
+        contentAlignment = Alignment.TopCenter
     ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .widthIn(max = 680.dp)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp)
+        ) {
         // Advert Rates Banner
         item {
             Card(
@@ -410,6 +417,7 @@ fun AdvertRatesScreen(
             }
         }
     }
+}
 }
 
 private fun formatNairaAmount(amount: Long): String {
